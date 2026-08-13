@@ -13,9 +13,30 @@ import {
   ArrowRight,
 } from 'lucide-react';
 
-/* ------------------------------------------------------------------ */
-/* Status bar                                                         */
-/* ------------------------------------------------------------------ */
+const SUPABASE_URL = 'https://wxwidyfafuoojmbgshqz.supabase.co';
+
+const SUPABASE_PUBLISHABLE_KEY =
+  'sb_publishable_mimlKpelYNnBxEjgAeSeIg_7Ueqtzwj';
+
+type Screen = 'home' | 'loading' | 'result';
+
+type AuditIssue = {
+  severity: string;
+  title: string;
+  detail: string;
+};
+
+type AuditRecommendation = {
+  text: string;
+  lift: string;
+};
+
+type AuditResult = {
+  score: number;
+  summary: string;
+  issues: AuditIssue[];
+  recommendations: AuditRecommendation[];
+};
 
 function StatusBar() {
   return (
@@ -32,21 +53,24 @@ function StatusBar() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Screen 1 — Home                                                    */
+/* Home                                                               */
 /* ------------------------------------------------------------------ */
 
 function HomeScreen({
+  url,
+  setUrl,
   onStart,
+  error,
 }: {
+  url: string;
+  setUrl: (value: string) => void;
   onStart: () => void;
+  error: string;
 }) {
-  const [url, setUrl] = useState('my-store.myshopify.com');
-
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-ink-950 bg-radial-fade">
       <StatusBar />
 
-      {/* brand */}
       <div className="flex items-center justify-between px-6 pt-5">
         <div className="flex items-center gap-2">
           <div className="grid h-8 w-8 place-items-center rounded-xl bg-neon text-ink-950 shadow-neon-sm">
@@ -59,13 +83,10 @@ function HomeScreen({
         </div>
 
         <div className="grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/5">
-          <span className="text-[10px] font-semibold text-white/60">
-            JM
-          </span>
+          <span className="text-[10px] font-semibold text-white/60">JM</span>
         </div>
       </div>
 
-      {/* headline */}
       <div className="px-6 pt-10">
         <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-neon/20 bg-neon/5 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-neon">
           <Sparkles className="h-3 w-3" />
@@ -80,12 +101,10 @@ function HomeScreen({
         </h1>
 
         <p className="mt-3 text-[13px] leading-relaxed text-white/50">
-          Paste your Shopify URL. Get a full mobile checkout report in 60
-          seconds.
+          Paste your website URL. Get a full AI-powered mobile UX report.
         </p>
       </div>
 
-      {/* URL input */}
       <div className="px-6 pt-7">
         <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-white/40">
           Store URL
@@ -99,6 +118,14 @@ function HomeScreen({
             onChange={(e) => setUrl(e.target.value)}
             placeholder="my-store.myshopify.com"
             className="w-full bg-transparent text-[13px] font-medium text-white placeholder:text-white/25 focus:outline-none"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                onStart();
+              }
+            }}
           />
 
           <span className="shrink-0 rounded-md bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold text-white/40">
@@ -106,7 +133,12 @@ function HomeScreen({
           </span>
         </div>
 
-        {/* trust row */}
+        {error && (
+          <div className="mt-3 rounded-xl border border-danger-500/20 bg-danger-500/[0.06] px-3 py-2.5 text-[11px] leading-relaxed text-red-300">
+            {error}
+          </div>
+        )}
+
         <div className="mt-3 flex items-center gap-3 text-[10px] text-white/35">
           <span className="inline-flex items-center gap-1">
             <ShieldCheck className="h-3 w-3 text-neon" />
@@ -119,11 +151,10 @@ function HomeScreen({
 
           <span className="h-1 w-1 rounded-full bg-white/20" />
 
-          <span>60s report</span>
+          <span>AI report</span>
         </div>
       </div>
 
-      {/* CTA */}
       <div className="px-6 pt-6">
         <button
           type="button"
@@ -134,7 +165,7 @@ function HomeScreen({
             Audit My Store
 
             <span className="rounded-md bg-ink-950/15 px-1.5 py-0.5 text-[12px] font-700">
-              $5
+              AI
             </span>
 
             <ArrowRight
@@ -147,11 +178,10 @@ function HomeScreen({
         </button>
 
         <p className="mt-2.5 text-center text-[10px] text-white/30">
-          One-time audit · refunded if no issues found
+          AI-powered mobile UX analysis
         </p>
       </div>
 
-      {/* recent scans */}
       <div className="mt-auto px-6 pb-8 pt-8">
         <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-white/40">
           Recent audits
@@ -182,52 +212,32 @@ function HomeScreen({
 }
 
 /* ------------------------------------------------------------------ */
-/* Screen 2 — Loading                                                 */
+/* Loading                                                            */
 /* ------------------------------------------------------------------ */
 
 function LoadingScreen({
-  onComplete,
+  progress,
+  url,
 }: {
-  onComplete: () => void;
+  progress: number;
+  url: string;
 }) {
-  const [progress, setProgress] = useState(34);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((current) => {
-        const next = Math.min(100, current + Math.random() * 7);
-
-        if (next >= 100) {
-          clearInterval(interval);
-
-          setTimeout(() => {
-            onComplete();
-          }, 500);
-        }
-
-        return next;
-      });
-    }, 220);
-
-    return () => clearInterval(interval);
-  }, [onComplete]);
-
   const steps = [
     {
-      label: 'Rendering mobile viewport',
-      done: true,
+      label: 'Connecting to website',
+      done: progress >= 20,
     },
     {
-      label: 'Mapping tap targets',
-      done: true,
+      label: 'Reading mobile experience',
+      done: progress >= 40,
     },
     {
-      label: 'Walking checkout flow',
-      done: progress > 60,
+      label: 'Analyzing UX problems',
+      done: progress >= 65,
     },
     {
-      label: 'Scoring conversion risks',
-      done: progress > 88,
+      label: 'Generating AI report',
+      done: progress >= 90,
     },
   ];
 
@@ -236,14 +246,10 @@ function LoadingScreen({
       <StatusBar />
 
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-6">
-        {/* animated ring */}
         <div className="relative mb-10 grid place-items-center">
           <div className="absolute h-40 w-40 rounded-full bg-neon/10 blur-2xl animate-pulseGlow" />
 
-          <svg
-            className="h-36 w-36 -rotate-90"
-            viewBox="0 0 120 120"
-          >
+          <svg className="h-36 w-36 -rotate-90" viewBox="0 0 120 120">
             <circle
               cx="60"
               cy="60"
@@ -265,8 +271,7 @@ function LoadingScreen({
               strokeDashoffset={327 - (327 * progress) / 100}
               style={{
                 transition: 'stroke-dashoffset 0.4s ease',
-                filter:
-                  'drop-shadow(0 0 6px rgba(57,255,20,0.6))',
+                filter: 'drop-shadow(0 0 6px rgba(57,255,20,0.6))',
               }}
             />
           </svg>
@@ -282,7 +287,10 @@ function LoadingScreen({
           </div>
         </div>
 
-        {/* status */}
+        <div className="mb-3 max-w-full truncate rounded-full border border-white/10 bg-ink-800 px-4 py-2 text-[11px] text-white/60">
+          {url}
+        </div>
+
         <div className="mb-6 flex items-center gap-2 rounded-full border border-white/10 bg-ink-800 px-4 py-2">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon opacity-60" />
@@ -290,21 +298,16 @@ function LoadingScreen({
           </span>
 
           <span className="font-display text-[13px] font-600 text-white/90">
-            Scanning Mobile Layout &amp; Checkout…
+            Gemini is analyzing your store…
           </span>
         </div>
 
-        {/* progress */}
         <div className="w-full">
           <div className="relative h-2 w-full overflow-hidden rounded-full bg-white/5">
             <div
               className="relative h-full rounded-full bg-gradient-to-r from-neon-600 to-neon transition-all duration-300"
               style={{ width: `${progress}%` }}
-            >
-              <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute inset-y-0 -left-1/3 w-1/3 animate-shimmer bg-white/40 blur-sm" />
-              </div>
-            </div>
+            />
           </div>
 
           <div className="mt-5 space-y-2.5">
@@ -320,17 +323,12 @@ function LoadingScreen({
                       : 'border border-white/15 bg-white/5 text-transparent'
                   }`}
                 >
-                  <CheckCircle2
-                    className="h-3 w-3"
-                    strokeWidth={3}
-                  />
+                  <CheckCircle2 className="h-3 w-3" strokeWidth={3} />
                 </span>
 
                 <span
                   className={
-                    s.done
-                      ? 'text-white/70'
-                      : 'text-white/35'
+                    s.done ? 'text-white/70' : 'text-white/35'
                   }
                 >
                   {s.label}
@@ -342,7 +340,7 @@ function LoadingScreen({
       </div>
 
       <p className="px-6 pb-8 text-center text-[10px] text-white/25">
-        MobileMend is reading your theme, cart, and checkout. Hang tight.
+        MobileMend is securely processing your website with AI.
       </p>
     </div>
   );
@@ -355,7 +353,6 @@ function LoadingScreen({
 function ScoreDial({ score }: { score: number }) {
   const r = 52;
   const circ = 2 * Math.PI * r;
-
   const [shown, setShown] = useState(0);
 
   useEffect(() => {
@@ -374,10 +371,7 @@ function ScoreDial({ score }: { score: number }) {
 
   return (
     <div className="relative grid place-items-center">
-      <svg
-        className="h-32 w-32 -rotate-90"
-        viewBox="0 0 120 120"
-      >
+      <svg className="h-32 w-32 -rotate-90" viewBox="0 0 120 120">
         <circle
           cx="60"
           cy="60"
@@ -398,8 +392,7 @@ function ScoreDial({ score }: { score: number }) {
           strokeDasharray={circ}
           strokeDashoffset={circ - (circ * shown) / 100}
           style={{
-            filter:
-              'drop-shadow(0 0 6px rgba(57,255,20,0.5))',
+            filter: 'drop-shadow(0 0 6px rgba(57,255,20,0.5))',
           }}
         />
 
@@ -411,15 +404,8 @@ function ScoreDial({ score }: { score: number }) {
             x2="1"
             y2="1"
           >
-            <stop
-              offset="0%"
-              stopColor="#1fcc0a"
-            />
-
-            <stop
-              offset="100%"
-              stopColor="#39ff14"
-            />
+            <stop offset="0%" stopColor="#1fcc0a" />
+            <stop offset="100%" stopColor="#39ff14" />
           </linearGradient>
         </defs>
       </svg>
@@ -450,14 +436,18 @@ function ErrorCard({
   tag: string;
   title: string;
   detail: string;
-  severity: 'high' | 'med';
+  severity: string;
 }) {
+  const isCritical =
+    severity.toLowerCase() === 'critical' ||
+    severity.toLowerCase() === 'high';
+
   return (
     <div className="rounded-xl border border-danger-500/20 bg-danger-500/[0.06] p-3">
       <div className="flex items-start gap-2.5">
         <span
           className={`mt-0.5 rounded-md px-1.5 py-0.5 text-[9px] font-700 uppercase tracking-wider ${
-            severity === 'high'
+            isCritical
               ? 'bg-danger-500 text-white'
               : 'bg-warn/20 text-warn'
           }`}
@@ -466,9 +456,7 @@ function ErrorCard({
         </span>
 
         <div className="min-w-0">
-          <p className="text-[12px] font-600 text-white">
-            {title}
-          </p>
+          <p className="text-[12px] font-600 text-white">{title}</p>
 
           <p className="mt-0.5 text-[11px] leading-snug text-white/45">
             {detail}
@@ -480,19 +468,22 @@ function ErrorCard({
 }
 
 /* ------------------------------------------------------------------ */
-/* Screen 3 — Results                                                 */
+/* Results                                                            */
 /* ------------------------------------------------------------------ */
 
 function ResultScreen({
+  result,
+  url,
   onBack,
 }: {
+  result: AuditResult;
+  url: string;
   onBack: () => void;
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-ink-950 bg-radial-fade">
       <StatusBar />
 
-      {/* header */}
       <div className="flex items-center justify-between px-5 pt-4">
         <button
           type="button"
@@ -504,122 +495,93 @@ function ResultScreen({
         </button>
 
         <span className="text-[11px] font-semibold uppercase tracking-wider text-white/40">
-          Audit Report
+          AI Audit Report
         </span>
 
-        <button
-          type="button"
-          className="grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/5 text-white/60"
-          aria-label="AI insights"
-        >
+        <div className="grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/5 text-white/60">
           <Sparkles className="h-3.5 w-3.5" />
-        </button>
+        </div>
       </div>
 
-      {/* score */}
       <div className="flex flex-col items-center px-5 pt-4">
-        <ScoreDial score={78} />
+        <ScoreDial score={result.score} />
 
         <div className="mt-3 flex items-center gap-2">
           <span className="rounded-full bg-neon/10 px-2.5 py-1 text-[11px] font-700 text-neon">
-            Good, fixable
+            {result.score >= 80
+              ? 'Good, fixable'
+              : result.score >= 60
+                ? 'Needs improvement'
+                : 'High priority fixes'}
           </span>
 
-          <span className="text-[11px] text-white/40">
-            my-store.myshopify.com
+          <span className="max-w-[180px] truncate text-[11px] text-white/40">
+            {url}
           </span>
         </div>
 
-        <p className="mt-2 text-center text-[11px] text-white/40">
-          You're losing an estimated{' '}
-          <span className="font-600 text-white">
-            $1,240/mo
-          </span>{' '}
-          to mobile friction.
+        <p className="mt-2 max-w-[330px] text-center text-[11px] leading-relaxed text-white/40">
+          {result.summary}
         </p>
       </div>
 
-      {/* issues */}
       <div className="px-5 pt-5">
         <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/40">
           <AlertTriangle className="h-3 w-3 text-danger-400" />
-          Issues found · 3
+          Issues found · {result.issues.length}
         </p>
 
         <div className="space-y-2">
-          <ErrorCard
-            tag="Critical"
-            title="Checkout button below the fold"
-            detail="Add-to-cart CTA pushed 640px down on iPhone SE. 41% of users never scroll."
-            severity="high"
-          />
-
-          <ErrorCard
-            tag="High"
-            title="Tiny tap targets on size selector"
-            detail="Size swatches are 28px — Apple's 44px minimum. Mis-taps on 12% of sessions."
-            severity="high"
-          />
-
-          <ErrorCard
-            tag="Medium"
-            title="No guest checkout option"
-            detail="Forced account creation drops 23% of mobile buyers at step 2."
-            severity="med"
-          />
+          {result.issues.map((issue, index) => (
+            <ErrorCard
+              key={`${issue.title}-${index}`}
+              tag={issue.severity}
+              title={issue.title}
+              detail={issue.detail}
+              severity={issue.severity}
+            />
+          ))}
         </div>
       </div>
 
-      {/* tips */}
       <div className="px-5 pb-8 pt-5">
         <p className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/40">
           <Zap className="h-3 w-3 text-neon" />
-          Fix these to convert more
+          AI recommendations
         </p>
 
         <div className="space-y-2">
-          {[
-            {
-              icon: MousePointerClick,
-              text: 'Sticky "Add to cart" bar on mobile product pages',
-              lift: '+8%',
-            },
-            {
-              icon: HandCoins,
-              text: 'Enable guest checkout, move signup to post-purchase',
-              lift: '+12%',
-            },
-            {
-              icon: Eye,
-              text: 'Lazy-load images below the fold, cut LCP by 1.4s',
-              lift: '+5%',
-            },
-          ].map((t, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.03] p-3"
-            >
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-neon/10 text-neon">
-                <t.icon className="h-4 w-4" />
-              </span>
+          {result.recommendations.map((recommendation, index) => {
+            const icons = [
+              MousePointerClick,
+              HandCoins,
+              Eye,
+            ];
 
-              <p className="flex-1 text-[12px] font-medium text-white/80">
-                {t.text}
-              </p>
+            const Icon = icons[index % icons.length];
 
-              <span className="shrink-0 rounded-md bg-neon/10 px-1.5 py-0.5 text-[10px] font-700 text-neon">
-                {t.lift}
-              </span>
-            </div>
-          ))}
+            return (
+              <div
+                key={`${recommendation.text}-${index}`}
+                className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.03] p-3"
+              >
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-neon/10 text-neon">
+                  <Icon className="h-4 w-4" />
+                </span>
+
+                <p className="flex-1 text-[12px] font-medium text-white/80">
+                  {recommendation.text}
+                </p>
+
+                {recommendation.lift && (
+                  <span className="shrink-0 rounded-md bg-neon/10 px-1.5 py-0.5 text-[10px] font-700 text-neon">
+                    {recommendation.lift}
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
-
-        <button
-          type="button"
-          className="mt-4 w-full rounded-2xl border border-neon/30 bg-neon/5 py-3 font-display text-[13px] font-700 text-neon transition hover:bg-neon/10"
-        >
-          Export full PDF report
-        </button>
       </div>
     </div>
   );
@@ -629,42 +591,137 @@ function ResultScreen({
 /* App                                                                */
 /* ------------------------------------------------------------------ */
 
-type Screen = 'home' | 'loading' | 'result';
-
 export default function App() {
   const [screen, setScreen] = useState<Screen>('home');
+  const [url, setUrl] = useState('my-store.myshopify.com');
+  const [progress, setProgress] = useState(0);
+  const [result, setResult] = useState<AuditResult | null>(null);
+  const [error, setError] = useState('');
 
-  const startAudit = () => {
+  const startAudit = async () => {
+    const cleanUrl = url.trim();
+
+    if (!cleanUrl) {
+      setError('Please enter your store URL.');
+      return;
+    }
+
+    setError('');
+    setProgress(8);
     setScreen('loading');
-  };
 
-  const showResult = () => {
-    setScreen('result');
+    const progressTimer = window.setInterval(() => {
+      setProgress((current) => {
+        if (current >= 88) {
+          return current;
+        }
+
+        return Math.min(88, current + Math.random() * 8);
+      });
+    }, 700);
+
+    try {
+      let websiteUrl = cleanUrl;
+
+      if (!/^https?:\/\//i.test(websiteUrl)) {
+        websiteUrl = `https://${websiteUrl}`;
+      }
+
+      const response = await fetch(
+        `${SUPABASE_URL}/functions/v1/audit`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            url: websiteUrl,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error || `Audit failed (${response.status})`,
+        );
+      }
+
+      if (
+        typeof data?.score !== 'number' ||
+        !Array.isArray(data?.issues) ||
+        !Array.isArray(data?.recommendations)
+      ) {
+        throw new Error('The AI returned an invalid audit report.');
+      }
+
+      clearInterval(progressTimer);
+      setProgress(100);
+
+      setTimeout(() => {
+        setResult({
+          score: Math.max(0, Math.min(100, Math.round(data.score))),
+          summary:
+            data.summary ||
+            'The AI completed the mobile UX analysis.',
+          issues: data.issues,
+          recommendations: data.recommendations,
+        });
+
+        setScreen('result');
+      }, 500);
+    } catch (err) {
+      clearInterval(progressTimer);
+
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Something went wrong while analyzing the website.';
+
+      setError(message);
+      setScreen('home');
+      setProgress(0);
+    }
   };
 
   const goHome = () => {
     setScreen('home');
+    setError('');
+    setProgress(0);
   };
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-ink-950">
-      {/* ambient glows */}
       <div className="pointer-events-none absolute -top-40 left-1/4 h-96 w-96 rounded-full bg-neon/10 blur-[120px]" />
 
       <div className="pointer-events-none absolute bottom-0 right-1/4 h-96 w-96 rounded-full bg-neon/5 blur-[120px]" />
 
-      {/* ONE SCREEN AT A TIME */}
       <main className="relative z-10 h-full w-full">
         {screen === 'home' && (
-          <HomeScreen onStart={startAudit} />
+          <HomeScreen
+            url={url}
+            setUrl={setUrl}
+            onStart={startAudit}
+            error={error}
+          />
         )}
 
         {screen === 'loading' && (
-          <LoadingScreen onComplete={showResult} />
+          <LoadingScreen
+            progress={progress}
+            url={url}
+          />
         )}
 
-        {screen === 'result' && (
-          <ResultScreen onBack={goHome} />
+        {screen === 'result' && result && (
+          <ResultScreen
+            result={result}
+            url={url}
+            onBack={goHome}
+          />
         )}
       </main>
     </div>
