@@ -1,0 +1,150 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-android:
+    name: Build MobileMend Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # 1. Checkout project
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # 3. Setup Java 17
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # 4. Verify original Bolt project
+      - name: Verify project files
+        run: |
+          echo "Checking project..."
+
+          test -f package.json
+          test -f package-lock.json
+          test -f vite.config.ts
+          test -f tailwind.config.js
+          test -f postcss.config.js
+          test -f src/App.tsx
+
+          echo "All required files found."
+
+      # 5. Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 6. Show installed versions
+      - name: Show installed versions
+        run: |
+          echo "=============================="
+          echo "Node"
+          node --version
+
+          echo "=============================="
+          echo "NPM"
+          npm --version
+
+          echo "=============================="
+          echo "React"
+          npm list react --depth=0 || true
+
+          echo "=============================="
+          echo "Vite"
+          npm list vite --depth=0 || true
+
+          echo "=============================="
+          echo "Tailwind"
+          npm list tailwindcss --depth=0 || true
+
+          echo "=============================="
+          echo "PostCSS"
+          npm list postcss --depth=0 || true
+
+      # 7. TypeScript check
+      - name: TypeScript check
+        run: npm run typecheck
+
+      # 8. Build web application
+      - name: Build web application
+        run: npm run build
+
+      # 9. Install Capacitor
+      - name: Install Capacitor
+        run: |
+          npm install \
+            @capacitor/core@6.2.1 \
+            @capacitor/cli@6.2.1 \
+            @capacitor/android@6.2.1 \
+            --save \
+            --legacy-peer-deps
+
+      # 10. Create Capacitor config
+      - name: Create Capacitor configuration
+        run: |
+          cat > capacitor.config.ts <<'EOF'
+          import type { CapacitorConfig } from '@capacitor/cli';
+
+          const config: CapacitorConfig = {
+            appId: 'com.mobilemend.app',
+            appName: 'MobileMend',
+            webDir: 'dist',
+            bundledWebRuntime: false
+          };
+
+          export default config;
+          EOF
+
+      # 11. Add Android platform
+      - name: Add Android platform
+        run: |
+          npx cap add android
+
+      # 12. Sync Capacitor
+      - name: Sync Capacitor
+        run: |
+          npx cap sync android
+
+      # 13. Build Android APK
+      - name: Build Android APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      # 14. Verify APK
+      - name: Verify APK
+        run: |
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+
+          if [ ! -f "$APK" ]; then
+            echo "ERROR: APK was not generated."
+            exit 1
+          fi
+
+          echo "APK successfully generated:"
+          ls -lh "$APK"
+
+      # 15. Upload APK
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MobileMend-Android-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
