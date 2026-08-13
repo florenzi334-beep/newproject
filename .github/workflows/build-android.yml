@@ -27,41 +27,52 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
-      # Install dependencies and update package-lock.json if necessary
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      # Confirm Gemini SDK is installed
       - name: Verify Gemini SDK
         run: npm list @google/genai
 
-      # Build the React/Vite application
+      - name: Install Capacitor
+        run: |
+          npm install @capacitor/core@6 @capacitor/android@6
+          npm install --save-dev @capacitor/cli@6
+
+      - name: Create Capacitor configuration
+        run: |
+          cat > capacitor.config.ts <<'EOF'
+          import type { CapacitorConfig } from '@capacitor/cli';
+
+          const config: CapacitorConfig = {
+            appId: 'com.mobilemend.app',
+            appName: 'MobileMend',
+            webDir: 'dist',
+            server: {
+              androidScheme: 'https'
+            }
+          };
+
+          export default config;
+          EOF
+
       - name: Build Web App
         run: npm run build
 
-      # Install Capacitor Android if needed
-      - name: Install Capacitor
-        run: |
-          npm install @capacitor/core @capacitor/android
-          npm install -D @capacitor/cli
-
-      # Create Android project if it does not already exist
-      - name: Setup Capacitor Android
+      - name: Create Android project
         run: |
           if [ ! -d "android" ]; then
             npx cap add android
           fi
 
-          npx cap sync android
+      - name: Sync Capacitor
+        run: npx cap sync android
 
-      # Build APK
       - name: Build Android APK
         working-directory: android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      # Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
