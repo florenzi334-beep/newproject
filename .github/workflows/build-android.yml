@@ -1,3 +1,4 @@
+```yaml
 name: Build Android APK
 
 on:
@@ -44,8 +45,8 @@ jobs:
           import type { CapacitorConfig } from '@capacitor/cli';
 
           const config: CapacitorConfig = {
-            appId: 'com.mobilemend.app',
-            appName: 'MobileMend',
+            appId: 'com.sitescope.ai',
+            appName: 'SiteScope AI',
             webDir: 'dist',
             server: {
               androidScheme: 'https'
@@ -67,6 +68,43 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Install ImageMagick
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+
+      - name: Apply SiteScope AI icon
+        run: |
+          set -e
+
+          LOGO="assets/sitescope-logo.png"
+          RES="android/app/src/main/res"
+
+          if [ ! -f "$LOGO" ]; then
+            echo "ERROR: Logo not found at $LOGO"
+            exit 1
+          fi
+
+          mkdir -p "$RES/mipmap-mdpi"
+          mkdir -p "$RES/mipmap-hdpi"
+          mkdir -p "$RES/mipmap-xhdpi"
+          mkdir -p "$RES/mipmap-xxhdpi"
+          mkdir -p "$RES/mipmap-xxxhdpi"
+
+          magick "$LOGO" -resize 48x48 "$RES/mipmap-mdpi/ic_launcher.png"
+          magick "$LOGO" -resize 72x72 "$RES/mipmap-hdpi/ic_launcher.png"
+          magick "$LOGO" -resize 96x96 "$RES/mipmap-xhdpi/ic_launcher.png"
+          magick "$LOGO" -resize 144x144 "$RES/mipmap-xxhdpi/ic_launcher.png"
+          magick "$LOGO" -resize 192x192 "$RES/mipmap-xxxhdpi/ic_launcher.png"
+
+          cp "$RES/mipmap-mdpi/ic_launcher.png" "$RES/mipmap-mdpi/ic_launcher_round.png"
+          cp "$RES/mipmap-hdpi/ic_launcher.png" "$RES/mipmap-hdpi/ic_launcher_round.png"
+          cp "$RES/mipmap-xhdpi/ic_launcher.png" "$RES/mipmap-xhdpi/ic_launcher_round.png"
+          cp "$RES/mipmap-xxhdpi/ic_launcher.png" "$RES/mipmap-xxhdpi/ic_launcher_round.png"
+          cp "$RES/mipmap-xxxhdpi/ic_launcher.png" "$RES/mipmap-xxxhdpi/ic_launcher_round.png"
+
+          echo "SiteScope AI icon applied successfully."
+
       - name: Build Android APK
         working-directory: android
         run: |
@@ -76,6 +114,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: mend-my-ux-apk
+          name: sitescope-ai-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+```
