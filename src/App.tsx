@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import jsPDF from 'jspdf';
 import {
   Search,
   ShieldCheck,
@@ -11,6 +12,7 @@ import {
   Zap,
   CheckCircle2,
   ArrowRight,
+  FileDown,
 } from 'lucide-react';
 
 const SUPABASE_URL = 'https://wxwidyfafuoojmbgshqz.supabase.co';
@@ -53,6 +55,340 @@ function StatusBar() {
 }
 
 /* ------------------------------------------------------------------ */
+/* PDF                                                                */
+/* ------------------------------------------------------------------ */
+
+function downloadPdf(
+  url: string,
+  result: AuditResult,
+) {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const pageWidth = 210;
+  const margin = 18;
+  const contentWidth = pageWidth - margin * 2;
+
+  let y = 20;
+
+  const addPageIfNeeded = (height = 10) => {
+    if (y + height > 278) {
+      doc.addPage();
+      y = 20;
+    }
+  };
+
+  const addWrappedText = (
+    text: string,
+    x: number,
+    width: number,
+    fontSize: number,
+    lineHeight = 6,
+  ) => {
+    doc.setFontSize(fontSize);
+
+    const lines = doc.splitTextToSize(text, width);
+
+    addPageIfNeeded(lines.length * lineHeight);
+
+    doc.text(lines, x, y);
+
+    y += lines.length * lineHeight;
+  };
+
+  /* Header */
+  doc.setFillColor(15, 23, 25);
+  doc.rect(0, 0, pageWidth, 42, 'F');
+
+  doc.setTextColor(57, 255, 20);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(22);
+  doc.text('MobileMend', margin, 18);
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Mobile UX Audit Report', margin, 27);
+
+  doc.setTextColor(180, 180, 180);
+  doc.setFontSize(8);
+  doc.text(
+    new Date().toLocaleDateString(),
+    margin,
+    34,
+  );
+
+  y = 55;
+
+  /* Website */
+  doc.setTextColor(30, 30, 30);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text('WEBSITE', margin, y);
+
+  y += 7;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(70, 70, 70);
+
+  addWrappedText(
+    url,
+    margin,
+    contentWidth,
+    10,
+    6,
+  );
+
+  y += 4;
+
+  /* Score */
+  addPageIfNeeded(35);
+
+  doc.setFillColor(240, 250, 238);
+  doc.roundedRect(
+    margin,
+    y,
+    contentWidth,
+    30,
+    4,
+    4,
+    'F',
+  );
+
+  doc.setTextColor(25, 25, 25);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('MOBILE UX SCORE', margin + 7, y + 9);
+
+  doc.setTextColor(35, 180, 15);
+  doc.setFontSize(24);
+  doc.text(
+    `${result.score}/100`,
+    margin + 7,
+    y + 22,
+  );
+
+  y += 40;
+
+  /* Summary */
+  doc.setTextColor(25, 25, 25);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('AI SUMMARY', margin, y);
+
+  y += 8;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(70, 70, 70);
+
+  addWrappedText(
+    result.summary,
+    margin,
+    contentWidth,
+    10,
+    6,
+  );
+
+  y += 7;
+
+  /* Issues */
+  doc.setTextColor(25, 25, 25);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text(
+    `MAJOR ISSUES (${result.issues.length})`,
+    margin,
+    y,
+  );
+
+  y += 9;
+
+  result.issues.forEach((issue, index) => {
+    const titleLines = doc.splitTextToSize(
+      `${index + 1}. ${issue.title}`,
+      contentWidth - 5,
+    );
+
+    const detailLines = doc.splitTextToSize(
+      issue.detail,
+      contentWidth - 5,
+    );
+
+    const boxHeight =
+      13 +
+      titleLines.length * 5 +
+      detailLines.length * 5;
+
+    addPageIfNeeded(boxHeight + 5);
+
+    doc.setFillColor(250, 245, 245);
+    doc.roundedRect(
+      margin,
+      y,
+      contentWidth,
+      boxHeight,
+      3,
+      3,
+      'F',
+    );
+
+    doc.setTextColor(190, 45, 45);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text(
+      issue.severity.toUpperCase(),
+      margin + 5,
+      y + 7,
+    );
+
+    y += 13;
+
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+
+    doc.text(
+      titleLines,
+      margin + 5,
+      y,
+    );
+
+    y += titleLines.length * 5 + 2;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(80, 80, 80);
+
+    doc.text(
+      detailLines,
+      margin + 5,
+      y,
+    );
+
+    y += detailLines.length * 5 + 8;
+  });
+
+  /* Recommendations */
+  y += 3;
+
+  addPageIfNeeded(20);
+
+  doc.setTextColor(25, 25, 25);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text(
+    `RECOMMENDED FIXES (${result.recommendations.length})`,
+    margin,
+    y,
+  );
+
+  y += 9;
+
+  result.recommendations.forEach(
+    (recommendation, index) => {
+      const textLines = doc.splitTextToSize(
+        `${index + 1}. ${recommendation.text}`,
+        contentWidth - 30,
+      );
+
+      const boxHeight =
+        Math.max(14, textLines.length * 5 + 9);
+
+      addPageIfNeeded(boxHeight + 5);
+
+      doc.setFillColor(242, 249, 240);
+      doc.roundedRect(
+        margin,
+        y,
+        contentWidth,
+        boxHeight,
+        3,
+        3,
+        'F',
+      );
+
+      doc.setTextColor(35, 170, 15);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text(
+        `${index + 1}`,
+        margin + 5,
+        y + 9,
+      );
+
+      doc.setTextColor(45, 45, 45);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+
+      doc.text(
+        textLines,
+        margin + 13,
+        y + 8,
+      );
+
+      if (recommendation.lift) {
+        doc.setTextColor(35, 170, 15);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+
+        doc.text(
+          recommendation.lift,
+          margin + contentWidth - 25,
+          y + 9,
+        );
+      }
+
+      y += boxHeight + 5;
+    },
+  );
+
+  /* Footer */
+  const pageCount = doc.getNumberOfPages();
+
+  for (let page = 1; page <= pageCount; page++) {
+    doc.setPage(page);
+
+    doc.setDrawColor(220, 220, 220);
+    doc.line(
+      margin,
+      285,
+      pageWidth - margin,
+      285,
+    );
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(140, 140, 140);
+
+    doc.text(
+      'Generated by MobileMend AI',
+      margin,
+      291,
+    );
+
+    doc.text(
+      `${page} / ${pageCount}`,
+      pageWidth - margin,
+      291,
+      { align: 'right' },
+    );
+  }
+
+  const safeName =
+    url
+      .replace(/^https?:\/\//i, '')
+      .replace(/[^a-z0-9]+/gi, '-')
+      .replace(/^-|-$/g, '')
+      .toLowerCase() || 'website';
+
+  doc.save(`mobilemend-${safeName}-audit.pdf`);
+}
+
+/* ------------------------------------------------------------------ */
 /* Home                                                               */
 /* ------------------------------------------------------------------ */
 
@@ -83,7 +419,9 @@ function HomeScreen({
         </div>
 
         <div className="grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/5">
-          <span className="text-[10px] font-semibold text-white/60">JM</span>
+          <span className="text-[10px] font-semibold text-white/60">
+            JM
+          </span>
         </div>
       </div>
 
@@ -249,7 +587,10 @@ function LoadingScreen({
         <div className="relative mb-10 grid place-items-center">
           <div className="absolute h-40 w-40 rounded-full bg-neon/10 blur-2xl animate-pulseGlow" />
 
-          <svg className="h-36 w-36 -rotate-90" viewBox="0 0 120 120">
+          <svg
+            className="h-36 w-36 -rotate-90"
+            viewBox="0 0 120 120"
+          >
             <circle
               cx="60"
               cy="60"
@@ -268,10 +609,13 @@ function LoadingScreen({
               strokeWidth="6"
               strokeLinecap="round"
               strokeDasharray={327}
-              strokeDashoffset={327 - (327 * progress) / 100}
+              strokeDashoffset={
+                327 - (327 * progress) / 100
+              }
               style={{
                 transition: 'stroke-dashoffset 0.4s ease',
-                filter: 'drop-shadow(0 0 6px rgba(57,255,20,0.6))',
+                filter:
+                  'drop-shadow(0 0 6px rgba(57,255,20,0.6))',
               }}
             />
           </svg>
@@ -323,12 +667,17 @@ function LoadingScreen({
                       : 'border border-white/15 bg-white/5 text-transparent'
                   }`}
                 >
-                  <CheckCircle2 className="h-3 w-3" strokeWidth={3} />
+                  <CheckCircle2
+                    className="h-3 w-3"
+                    strokeWidth={3}
+                  />
                 </span>
 
                 <span
                   className={
-                    s.done ? 'text-white/70' : 'text-white/35'
+                    s.done
+                      ? 'text-white/70'
+                      : 'text-white/35'
                   }
                 >
                   {s.label}
@@ -371,7 +720,10 @@ function ScoreDial({ score }: { score: number }) {
 
   return (
     <div className="relative grid place-items-center">
-      <svg className="h-32 w-32 -rotate-90" viewBox="0 0 120 120">
+      <svg
+        className="h-32 w-32 -rotate-90"
+        viewBox="0 0 120 120"
+      >
         <circle
           cx="60"
           cy="60"
@@ -390,9 +742,12 @@ function ScoreDial({ score }: { score: number }) {
           strokeWidth="8"
           strokeLinecap="round"
           strokeDasharray={circ}
-          strokeDashoffset={circ - (circ * shown) / 100}
+          strokeDashoffset={
+            circ - (circ * shown) / 100
+          }
           style={{
-            filter: 'drop-shadow(0 0 6px rgba(57,255,20,0.5))',
+            filter:
+              'drop-shadow(0 0 6px rgba(57,255,20,0.5))',
           }}
         />
 
@@ -404,8 +759,15 @@ function ScoreDial({ score }: { score: number }) {
             x2="1"
             y2="1"
           >
-            <stop offset="0%" stopColor="#1fcc0a" />
-            <stop offset="100%" stopColor="#39ff14" />
+            <stop
+              offset="0%"
+              stopColor="#1fcc0a"
+            />
+
+            <stop
+              offset="100%"
+              stopColor="#39ff14"
+            />
           </linearGradient>
         </defs>
       </svg>
@@ -456,7 +818,9 @@ function ErrorCard({
         </span>
 
         <div className="min-w-0">
-          <p className="text-[12px] font-600 text-white">{title}</p>
+          <p className="text-[12px] font-600 text-white">
+            {title}
+          </p>
 
           <p className="mt-0.5 text-[11px] leading-snug text-white/45">
             {detail}
@@ -480,6 +844,26 @@ function ResultScreen({
   url: string;
   onBack: () => void;
 }) {
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  const handleDownloadPdf = () => {
+    try {
+      setPdfLoading(true);
+
+      setTimeout(() => {
+        try {
+          downloadPdf(url, result);
+        } finally {
+          setPdfLoading(false);
+        }
+      }, 50);
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      setPdfLoading(false);
+      alert('Could not generate the PDF. Please try again.');
+    }
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-ink-950 bg-radial-fade">
       <StatusBar />
@@ -544,44 +928,73 @@ function ResultScreen({
         </div>
       </div>
 
-      <div className="px-5 pb-8 pt-5">
+      <div className="px-5 pt-5">
         <p className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/40">
           <Zap className="h-3 w-3 text-neon" />
           AI recommendations
         </p>
 
         <div className="space-y-2">
-          {result.recommendations.map((recommendation, index) => {
-            const icons = [
-              MousePointerClick,
-              HandCoins,
-              Eye,
-            ];
+          {result.recommendations.map(
+            (recommendation, index) => {
+              const icons = [
+                MousePointerClick,
+                HandCoins,
+                Eye,
+              ];
 
-            const Icon = icons[index % icons.length];
+              const Icon =
+                icons[index % icons.length];
 
-            return (
-              <div
-                key={`${recommendation.text}-${index}`}
-                className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.03] p-3"
-              >
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-neon/10 text-neon">
-                  <Icon className="h-4 w-4" />
-                </span>
-
-                <p className="flex-1 text-[12px] font-medium text-white/80">
-                  {recommendation.text}
-                </p>
-
-                {recommendation.lift && (
-                  <span className="shrink-0 rounded-md bg-neon/10 px-1.5 py-0.5 text-[10px] font-700 text-neon">
-                    {recommendation.lift}
+              return (
+                <div
+                  key={`${recommendation.text}-${index}`}
+                  className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.03] p-3"
+                >
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-neon/10 text-neon">
+                    <Icon className="h-4 w-4" />
                   </span>
-                )}
-              </div>
-            );
-          })}
+
+                  <p className="flex-1 text-[12px] font-medium text-white/80">
+                    {recommendation.text}
+                  </p>
+
+                  {recommendation.lift && (
+                    <span className="shrink-0 rounded-md bg-neon/10 px-1.5 py-0.5 text-[10px] font-700 text-neon">
+                      {recommendation.lift}
+                    </span>
+                  )}
+                </div>
+              );
+            },
+          )}
         </div>
+      </div>
+
+      {/* PDF BUTTON */}
+      <div className="px-5 pb-8 pt-5">
+        <button
+          type="button"
+          onClick={handleDownloadPdf}
+          disabled={pdfLoading}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-neon/30 bg-neon/5 py-3.5 font-display text-[13px] font-700 text-neon transition active:scale-[0.98] disabled:opacity-60"
+        >
+          {pdfLoading ? (
+            <>
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-neon/30 border-t-neon" />
+              Generating PDF...
+            </>
+          ) : (
+            <>
+              <FileDown className="h-4 w-4" />
+              Download PDF Report
+            </>
+          )}
+        </button>
+
+        <p className="mt-2 text-center text-[10px] text-white/25">
+          Your report is generated securely on your device.
+        </p>
       </div>
     </div>
   );
@@ -592,11 +1005,21 @@ function ResultScreen({
 /* ------------------------------------------------------------------ */
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('home');
-  const [url, setUrl] = useState('my-store.myshopify.com');
-  const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState<AuditResult | null>(null);
-  const [error, setError] = useState('');
+  const [screen, setScreen] =
+    useState<Screen>('home');
+
+  const [url, setUrl] = useState(
+    'my-store.myshopify.com',
+  );
+
+  const [progress, setProgress] =
+    useState(0);
+
+  const [result, setResult] =
+    useState<AuditResult | null>(null);
+
+  const [error, setError] =
+    useState('');
 
   const startAudit = async () => {
     const cleanUrl = url.trim();
@@ -610,15 +1033,19 @@ export default function App() {
     setProgress(8);
     setScreen('loading');
 
-    const progressTimer = window.setInterval(() => {
-      setProgress((current) => {
-        if (current >= 88) {
-          return current;
-        }
+    const progressTimer =
+      window.setInterval(() => {
+        setProgress((current) => {
+          if (current >= 88) {
+            return current;
+          }
 
-        return Math.min(88, current + Math.random() * 8);
-      });
-    }, 700);
+          return Math.min(
+            88,
+            current + Math.random() * 8,
+          );
+        });
+      }, 700);
 
     try {
       let websiteUrl = cleanUrl;
@@ -631,11 +1058,14 @@ export default function App() {
         `${SUPABASE_URL}/functions/v1/audit`,
         {
           method: 'POST',
+
           headers: {
             'Content-Type': 'application/json',
             apikey: SUPABASE_PUBLISHABLE_KEY,
-            Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization:
+              `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
           },
+
           body: JSON.stringify({
             url: websiteUrl,
           }),
@@ -646,16 +1076,21 @@ export default function App() {
 
       if (!response.ok) {
         throw new Error(
-          data?.error || `Audit failed (${response.status})`,
+          data?.error ||
+            `Audit failed (${response.status})`,
         );
       }
 
       if (
         typeof data?.score !== 'number' ||
         !Array.isArray(data?.issues) ||
-        !Array.isArray(data?.recommendations)
+        !Array.isArray(
+          data?.recommendations,
+        )
       ) {
-        throw new Error('The AI returned an invalid audit report.');
+        throw new Error(
+          'The AI returned an invalid audit report.',
+        );
       }
 
       clearInterval(progressTimer);
@@ -663,12 +1098,22 @@ export default function App() {
 
       setTimeout(() => {
         setResult({
-          score: Math.max(0, Math.min(100, Math.round(data.score))),
+          score: Math.max(
+            0,
+            Math.min(
+              100,
+              Math.round(data.score),
+            ),
+          ),
+
           summary:
             data.summary ||
             'The AI completed the mobile UX analysis.',
+
           issues: data.issues,
-          recommendations: data.recommendations,
+
+          recommendations:
+            data.recommendations,
         });
 
         setScreen('result');
