@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import jsPDF from 'jspdf';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import {
   Search,
   ShieldCheck,
@@ -15,7 +17,8 @@ import {
   FileDown,
 } from 'lucide-react';
 
-const SUPABASE_URL = 'https://wxwidyfafuoojmbgshqz.supabase.co';
+const SUPABASE_URL =
+  'https://wxwidyfafuoojmbgshqz.supabase.co';
 
 const SUPABASE_PUBLISHABLE_KEY =
   'sb_publishable_mimlKpelYNnBxEjgAeSeIg_7Ueqtzwj';
@@ -55,10 +58,10 @@ function StatusBar() {
 }
 
 /* ------------------------------------------------------------------ */
-/* PDF                                                                */
+/* PDF                                                               */
 /* ------------------------------------------------------------------ */
 
-function downloadPdf(
+async function generateAndSharePdf(
   url: string,
   result: AuditResult,
 ) {
@@ -90,7 +93,10 @@ function downloadPdf(
   ) => {
     doc.setFontSize(fontSize);
 
-    const lines = doc.splitTextToSize(text, width);
+    const lines = doc.splitTextToSize(
+      String(text || ''),
+      width,
+    );
 
     addPageIfNeeded(lines.length * lineHeight);
 
@@ -162,7 +168,11 @@ function downloadPdf(
   doc.setTextColor(25, 25, 25);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
-  doc.text('MOBILE UX SCORE', margin + 7, y + 9);
+  doc.text(
+    'MOBILE UX SCORE',
+    margin + 7,
+    y + 9,
+  );
 
   doc.setTextColor(35, 180, 15);
   doc.setFontSize(24);
@@ -199,6 +209,7 @@ function downloadPdf(
   doc.setTextColor(25, 25, 25);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
+
   doc.text(
     `MAJOR ISSUES (${result.issues.length})`,
     margin,
@@ -210,22 +221,23 @@ function downloadPdf(
   result.issues.forEach((issue, index) => {
     const titleLines = doc.splitTextToSize(
       `${index + 1}. ${issue.title}`,
-      contentWidth - 5,
+      contentWidth - 10,
     );
 
     const detailLines = doc.splitTextToSize(
       issue.detail,
-      contentWidth - 5,
+      contentWidth - 10,
     );
 
     const boxHeight =
-      13 +
+      15 +
       titleLines.length * 5 +
       detailLines.length * 5;
 
     addPageIfNeeded(boxHeight + 5);
 
     doc.setFillColor(250, 245, 245);
+
     doc.roundedRect(
       margin,
       y,
@@ -239,8 +251,9 @@ function downloadPdf(
     doc.setTextColor(190, 45, 45);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
+
     doc.text(
-      issue.severity.toUpperCase(),
+      String(issue.severity || 'Issue').toUpperCase(),
       margin + 5,
       y + 7,
     );
@@ -280,6 +293,7 @@ function downloadPdf(
   doc.setTextColor(25, 25, 25);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
+
   doc.text(
     `RECOMMENDED FIXES (${result.recommendations.length})`,
     margin,
@@ -292,15 +306,18 @@ function downloadPdf(
     (recommendation, index) => {
       const textLines = doc.splitTextToSize(
         `${index + 1}. ${recommendation.text}`,
-        contentWidth - 30,
+        contentWidth - 20,
       );
 
-      const boxHeight =
-        Math.max(14, textLines.length * 5 + 9);
+      const boxHeight = Math.max(
+        18,
+        textLines.length * 5 + 10,
+      );
 
       addPageIfNeeded(boxHeight + 5);
 
       doc.setFillColor(242, 249, 240);
+
       doc.roundedRect(
         margin,
         y,
@@ -314,10 +331,11 @@ function downloadPdf(
       doc.setTextColor(35, 170, 15);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
+
       doc.text(
         `${index + 1}`,
         margin + 5,
-        y + 9,
+        y + 10,
       );
 
       doc.setTextColor(45, 45, 45);
@@ -338,7 +356,7 @@ function downloadPdf(
         doc.text(
           recommendation.lift,
           margin + contentWidth - 25,
-          y + 9,
+          y + 10,
         );
       }
 
@@ -353,6 +371,7 @@ function downloadPdf(
     doc.setPage(page);
 
     doc.setDrawColor(220, 220, 220);
+
     doc.line(
       margin,
       285,
@@ -378,6 +397,17 @@ function downloadPdf(
     );
   }
 
+  /*
+   * Generate the PDF as a data URI.
+   * We remove the "data:application/pdf;..." prefix
+   * because Capacitor Filesystem expects raw base64.
+   */
+  const dataUri = doc.output('datauristring');
+
+  const base64 = dataUri.substring(
+    dataUri.indexOf(',') + 1,
+  );
+
   const safeName =
     url
       .replace(/^https?:\/\//i, '')
@@ -385,7 +415,28 @@ function downloadPdf(
       .replace(/^-|-$/g, '')
       .toLowerCase() || 'website';
 
-  doc.save(`mobilemend-${safeName}-audit.pdf`);
+  const fileName =
+    `mobilemend-${safeName}-audit-${Date.now()}.pdf`;
+
+  /*
+   * Save the PDF into Android's cache directory.
+   */
+  const savedFile = await Filesystem.writeFile({
+    path: fileName,
+    data: base64,
+    directory: Directory.Cache,
+  });
+
+  /*
+   * Open the Android share/save dialog.
+   * The user can choose Files, Drive, WhatsApp, etc.
+   */
+  await Share.share({
+    title: 'MobileMend Audit Report',
+    text: `MobileMend mobile UX audit for ${url}`,
+    url: savedFile.uri,
+    dialogTitle: 'Save or share your PDF report',
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -844,23 +895,39 @@ function ResultScreen({
   url: string;
   onBack: () => void;
 }) {
-  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] =
+    useState(false);
 
-  const handleDownloadPdf = () => {
+  const [pdfError, setPdfError] =
+    useState('');
+
+  const handleDownloadPdf = async () => {
+    if (pdfLoading) return;
+
+    setPdfLoading(true);
+    setPdfError('');
+
     try {
-      setPdfLoading(true);
-
-      setTimeout(() => {
-        try {
-          downloadPdf(url, result);
-        } finally {
-          setPdfLoading(false);
-        }
-      }, 50);
+      await generateAndSharePdf(
+        url,
+        result,
+      );
     } catch (error) {
-      console.error('PDF generation failed:', error);
+      console.error(
+        'PDF generation/share failed:',
+        error,
+      );
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Could not create the PDF.';
+
+      setPdfError(
+        `${message} Please try again.`,
+      );
+    } finally {
       setPdfLoading(false);
-      alert('Could not generate the PDF. Please try again.');
     }
   };
 
@@ -992,6 +1059,12 @@ function ResultScreen({
           )}
         </button>
 
+        {pdfError && (
+          <div className="mt-3 rounded-xl border border-danger-500/20 bg-danger-500/[0.06] px-3 py-2.5 text-center text-[10px] leading-relaxed text-red-300">
+            {pdfError}
+          </div>
+        )}
+
         <p className="mt-2 text-center text-[10px] text-white/25">
           Your report is generated securely on your device.
         </p>
@@ -1051,7 +1124,8 @@ export default function App() {
       let websiteUrl = cleanUrl;
 
       if (!/^https?:\/\//i.test(websiteUrl)) {
-        websiteUrl = `https://${websiteUrl}`;
+        websiteUrl =
+          `https://${websiteUrl}`;
       }
 
       const response = await fetch(
@@ -1061,7 +1135,8 @@ export default function App() {
 
           headers: {
             'Content-Type': 'application/json',
-            apikey: SUPABASE_PUBLISHABLE_KEY,
+            apikey:
+              SUPABASE_PUBLISHABLE_KEY,
             Authorization:
               `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
           },
@@ -1161,13 +1236,14 @@ export default function App() {
           />
         )}
 
-        {screen === 'result' && result && (
-          <ResultScreen
-            result={result}
-            url={url}
-            onBack={goHome}
-          />
-        )}
+        {screen === 'result' &&
+          result && (
+            <ResultScreen
+              result={result}
+              url={url}
+              onBack={goHome}
+            />
+          )}
       </main>
     </div>
   );
