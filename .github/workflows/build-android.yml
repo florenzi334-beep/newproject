@@ -19,20 +19,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: 20
+          cache: npm
 
-      - name: Setup Java JDK 17
+      - name: Setup Java
         uses: actions/setup-java@v5
         with:
-          distribution: "temurin"
-          java-version: "17"
+          distribution: temurin
+          java-version: 17
 
       - name: Install dependencies
         run: npm install --legacy-peer-deps
-
-      - name: Verify Gemini SDK
-        run: npm list @google/genai
 
       - name: Install Capacitor
         run: |
@@ -41,29 +38,26 @@ jobs:
 
       - name: Create Capacitor configuration
         run: |
-          cat > capacitor.config.ts <<'EOF'
-          import type { CapacitorConfig } from '@capacitor/cli';
-
-          const config: CapacitorConfig = {
-            appId: 'com.mobilemend.app',
-            appName: 'SiteScope AI',
-            webDir: 'dist',
-            server: {
-              androidScheme: 'https'
-            }
-          };
-
-          export default config;
-          EOF
+          printf '%s\n' \
+            "import type { CapacitorConfig } from '@capacitor/cli';" \
+            "" \
+            "const config: CapacitorConfig = {" \
+            "  appId: 'com.mobilemend.app'," \
+            "  appName: 'SiteScope AI'," \
+            "  webDir: 'dist'," \
+            "  server: {" \
+            "    androidScheme: 'https'" \
+            "  }" \
+            "};" \
+            "" \
+            "export default config;" \
+            > capacitor.config.ts
 
       - name: Build Web App
         run: npm run build
 
       - name: Create Android project
-        run: |
-          if [ ! -d "android" ]; then
-            npx cap add android
-          fi
+        run: npx cap add android
 
       - name: Sync Capacitor
         run: npx cap sync android
