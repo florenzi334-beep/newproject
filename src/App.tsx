@@ -43,6 +43,13 @@ type AuditResult = {
   recommendations: AuditRecommendation[];
 };
 
+type RecentAudit = {
+  id: string;
+  url: string;
+  score: number;
+  created_at: string;
+};
+
 function StatusBar() {
   return (
     <div className="flex items-center justify-between px-6 pt-3 text-[11px] font-semibold text-white">
@@ -448,11 +455,13 @@ function HomeScreen({
   setUrl,
   onStart,
   error,
+  recentAudits,
 }: {
   url: string;
   setUrl: (value: string) => void;
   onStart: () => void;
   error: string;
+  recentAudits: RecentAudit[];
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-ink-950 bg-radial-fade">
@@ -577,23 +586,28 @@ function HomeScreen({
         </p>
 
         <div className="space-y-2">
-          {[
-            { name: 'allbirds.com', score: 91 },
-            { name: 'glossier.com', score: 84 },
-          ].map((s) => (
-            <div
-              key={s.name}
-              className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2.5"
-            >
-              <span className="text-[12px] font-medium text-white/70">
-                {s.name}
-              </span>
-
-              <span className="rounded-md bg-neon/10 px-2 py-0.5 text-[11px] font-700 text-neon">
-                {s.score}/100
-              </span>
+          {recentAudits.length === 0 ? (
+            <div className="rounded-xl border border-white/5 bg-white/[0.03] px-3 py-4 text-center">
+              <p className="text-[11px] text-white/30">
+                No audits yet
+              </p>
             </div>
-          ))}
+          ) : (
+            recentAudits.map((audit) => (
+              <div
+                key={audit.id}
+                className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2.5"
+              >
+                <span className="max-w-[220px] truncate text-[12px] font-medium text-white/70">
+                  {audit.url.replace(/^https?:\/\//i, '')}
+                </span>
+
+                <span className="rounded-md bg-neon/10 px-2 py-0.5 text-[11px] font-700 text-neon">
+                  {audit.score}/100
+                </span>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -1094,6 +1108,36 @@ export default function App() {
   const [error, setError] =
     useState('');
 
+  const [recentAudits, setRecentAudits] =
+    useState<RecentAudit[]>([]);
+
+  const loadRecentAudits = async () => {
+    try {
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/audits?select=id,url,score,created_at&order=created_at.desc&limit=5`,
+        {
+          headers: {
+            apikey: SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error('Could not load recent audits.');
+      }
+
+      const data = await response.json();
+      setRecentAudits(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Could not load recent audits:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadRecentAudits();
+  }, []);
+
   const startAudit = async () => {
     const cleanUrl = url.trim();
 
@@ -1168,6 +1212,44 @@ export default function App() {
         );
       }
 
+      const finalScore = Math.max(
+        0,
+        Math.min(100, Math.round(data.score)),
+      );
+
+      try {
+        const saveResponse = await fetch(
+          `${SUPABASE_URL}/rest/v1/audits`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: SUPABASE_PUBLISHABLE_KEY,
+              Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+              Prefer: 'return=minimal',
+            },
+            body: JSON.stringify({
+              url: websiteUrl,
+              score: finalScore,
+            }),
+          },
+        );
+
+        if (!saveResponse.ok) {
+          console.error(
+            'Could not save audit:',
+            await saveResponse.text(),
+          );
+        } else {
+          await loadRecentAudits();
+        }
+      } catch (saveError) {
+        console.error(
+          'Could not save audit:',
+          saveError,
+        );
+      }
+
       clearInterval(progressTimer);
       setProgress(100);
 
@@ -1226,6 +1308,7 @@ export default function App() {
             setUrl={setUrl}
             onStart={startAudit}
             error={error}
+            recentAudits={recentAudits}
           />
         )}
 
