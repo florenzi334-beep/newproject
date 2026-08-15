@@ -920,7 +920,7 @@ function LoadingScreen({
           </span>
 
           <span className="font-display text-[13px] font-600 text-white/90">
-            Gemini is analyzing your store…
+            AI is analyzing your store…
           </span>
         </div>
 
@@ -1449,8 +1449,7 @@ export default function App() {
   /* -------------------------------------------------------------- */
 
   const startAudit = async () => {
-    const cleanUrl =
-      url.trim();
+    const cleanUrl = url.trim();
 
     if (!cleanUrl) {
       setError(
@@ -1472,15 +1471,13 @@ export default function App() {
 
           return Math.min(
             88,
-            current +
-              Math.random() * 8,
+            current + Math.random() * 8,
           );
         });
       }, 700);
 
     try {
-      let websiteUrl =
-        cleanUrl;
+      let websiteUrl = cleanUrl;
 
       if (
         !/^https?:\/\//i.test(
@@ -1490,6 +1487,10 @@ export default function App() {
         websiteUrl =
           `https://${websiteUrl}`;
       }
+
+      /* ---------------------------------------------------------- */
+      /* Get current Supabase session                               */
+      /* ---------------------------------------------------------- */
 
       const {
         data: {
@@ -1504,9 +1505,48 @@ export default function App() {
         );
       }
 
+      /* ---------------------------------------------------------- */
+      /* Validate environment variables                             */
+      /* ---------------------------------------------------------- */
+
+      const supabaseUrl =
+        import.meta.env.VITE_SUPABASE_URL;
+
+      const supabaseKey =
+        import.meta.env
+          .VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      if (!supabaseUrl) {
+        throw new Error(
+          'VITE_SUPABASE_URL is missing. Check your .env file.',
+        );
+      }
+
+      if (!supabaseKey) {
+        throw new Error(
+          'VITE_SUPABASE_PUBLISHABLE_KEY is missing. Check your .env file.',
+        );
+      }
+
+      /* ---------------------------------------------------------- */
+      /* Build Edge Function URL                                    */
+      /* ---------------------------------------------------------- */
+
+      const functionUrl =
+        `${supabaseUrl.replace(/\/$/, '')}/functions/v1/audit`;
+
+      console.log(
+        'Calling audit function:',
+        functionUrl,
+      );
+
+      /* ---------------------------------------------------------- */
+      /* Call Edge Function                                         */
+      /* ---------------------------------------------------------- */
+
       const response =
         await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/audit`,
+          functionUrl,
           {
             method: 'POST',
 
@@ -1515,8 +1555,7 @@ export default function App() {
                 'application/json',
 
               apikey:
-                import.meta.env
-                  .VITE_SUPABASE_PUBLISHABLE_KEY,
+                supabaseKey,
 
               Authorization:
                 `Bearer ${currentSession.access_token}`,
@@ -1528,15 +1567,74 @@ export default function App() {
           },
         );
 
-      const data =
-        await response.json();
+      /* ---------------------------------------------------------- */
+      /* Read response as TEXT first                                */
+      /* This prevents <!doctype ... JSON errors                   */
+      /* ---------------------------------------------------------- */
+
+      const responseText =
+        await response.text();
+
+      console.log(
+        'Audit response status:',
+        response.status,
+      );
+
+      console.log(
+        'Audit response:',
+        responseText,
+      );
+
+      let data: any = null;
+
+      try {
+        data = responseText
+          ? JSON.parse(responseText)
+          : null;
+      } catch (jsonError) {
+        console.error(
+          'Audit returned non-JSON response:',
+          responseText,
+        );
+
+        const trimmedResponse =
+          responseText
+            .trim()
+            .toLowerCase();
+
+        if (
+          trimmedResponse.startsWith(
+            '<!doctype',
+          ) ||
+          trimmedResponse.startsWith(
+            '<html',
+          )
+        ) {
+          throw new Error(
+            `The audit server returned an HTML page instead of JSON (${response.status}). Check that your Supabase Edge Function "audit" is deployed and that VITE_SUPABASE_URL is correct.`,
+          );
+        }
+
+        throw new Error(
+          `The audit server returned an invalid response (${response.status}).`,
+        );
+      }
+
+      /* ---------------------------------------------------------- */
+      /* HTTP error                                                 */
+      /* ---------------------------------------------------------- */
 
       if (!response.ok) {
         throw new Error(
           data?.error ||
+            data?.message ||
             `Audit failed (${response.status})`,
         );
       }
+
+      /* ---------------------------------------------------------- */
+      /* Validate audit result                                     */
+      /* ---------------------------------------------------------- */
 
       if (
         typeof data?.score !==
@@ -1548,8 +1646,13 @@ export default function App() {
           data?.recommendations,
         )
       ) {
+        console.error(
+          'Invalid audit response:',
+          data,
+        );
+
         throw new Error(
-          'The AI returned an invalid audit report.',
+          'The audit server returned an invalid audit report.',
         );
       }
 
@@ -1565,7 +1668,7 @@ export default function App() {
         );
 
       /* ---------------------------------------------------------- */
-      /* Save audit for the logged-in user                          */
+      /* Save audit for logged-in user                              */
       /* ---------------------------------------------------------- */
 
       const {
@@ -1575,7 +1678,9 @@ export default function App() {
         .insert({
           user_id:
             currentSession.user.id,
+
           url: websiteUrl,
+
           score: finalScore,
         });
 
@@ -1587,6 +1692,10 @@ export default function App() {
       } else {
         await loadRecentAudits();
       }
+
+      /* ---------------------------------------------------------- */
+      /* Finish                                                      */
+      /* ---------------------------------------------------------- */
 
       clearInterval(
         progressTimer,
@@ -1616,13 +1725,20 @@ export default function App() {
         progressTimer,
       );
 
+      console.error(
+        'Website audit failed:',
+        err,
+      );
+
       const message =
         err instanceof Error
           ? err.message
           : 'Something went wrong while analyzing the website.';
 
       setError(message);
+
       setScreen('home');
+
       setProgress(0);
     }
   };
