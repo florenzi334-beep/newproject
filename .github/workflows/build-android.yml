@@ -30,9 +30,6 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Verify Gemini SDK
-        run: npm list @google/genai
-
       - name: Install Capacitor
         run: |
           npm install @capacitor/core@6 @capacitor/android@6
@@ -56,6 +53,9 @@ jobs:
           EOF
 
       - name: Build Web App
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: npm run build
 
       - name: Create Android project
