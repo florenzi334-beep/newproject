@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import jsPDF from 'jspdf';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { supabase } from './lib/supabaseClient';
 import {
   Search,
   ShieldCheck,
