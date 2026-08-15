@@ -44,7 +44,6 @@ type RecentAudit = {
   url: string;
   score: number;
   created_at: string;
-  user_id: string;
 };
 
 /* ------------------------------------------------------------------ */
@@ -499,9 +498,7 @@ function AuthScreen() {
   return (
     <div className="flex h-full min-h-0 flex-col justify-center overflow-y-auto bg-ink-950 bg-radial-fade px-6">
       <div className="mx-auto w-full max-w-md">
-
         <div className="mb-8 flex flex-col items-center">
-
           <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-neon text-ink-950 shadow-neon">
             <Zap
               className="h-7 w-7"
@@ -518,13 +515,10 @@ function AuthScreen() {
               ? 'Log in to continue your website audits.'
               : 'Create your account and start auditing.'}
           </p>
-
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
-
           <div className="mb-5 grid grid-cols-2 rounded-xl bg-white/5 p-1">
-
             <button
               type="button"
               onClick={() => {
@@ -556,7 +550,6 @@ function AuthScreen() {
             >
               Sign Up
             </button>
-
           </div>
 
           <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-white/40">
@@ -631,14 +624,12 @@ function AuthScreen() {
               </>
             )}
           </button>
-
         </div>
 
         <p className="mt-5 text-center text-[10px] leading-relaxed text-white/25">
           Your account keeps your audits and credits
           securely associated with you.
         </p>
-
       </div>
     </div>
   );
@@ -667,11 +658,8 @@ function HomeScreen({
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-ink-950 bg-radial-fade">
-
       <div className="flex items-center justify-between px-6 pt-5">
-
         <div className="flex items-center gap-2">
-
           <div className="grid h-8 w-8 place-items-center rounded-xl bg-neon text-ink-950 shadow-neon-sm">
             <Zap
               className="h-4 w-4"
@@ -682,11 +670,9 @@ function HomeScreen({
           <span className="font-display text-sm font-700 tracking-tight">
             SiteScope AI
           </span>
-
         </div>
 
         <div className="flex items-center gap-2">
-
           <div className="grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/5">
             <span className="text-[10px] font-semibold text-white/60">
               {userEmail
@@ -704,13 +690,10 @@ function HomeScreen({
           >
             Log out
           </button>
-
         </div>
-
       </div>
 
       <div className="px-6 pt-10">
-
         <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-neon/20 bg-neon/5 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-neon">
           <Sparkles className="h-3 w-3" />
           Website UX Audit
@@ -726,17 +709,14 @@ function HomeScreen({
         <p className="mt-3 text-[13px] leading-relaxed text-white/50">
           Paste your website URL. Get a full AI-powered mobile UX report.
         </p>
-
       </div>
 
       <div className="px-6 pt-7">
-
         <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-white/40">
           Store URL
         </label>
 
         <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-ink-800 px-3.5 py-3.5 transition focus-within:border-neon/50 focus-within:shadow-neon-sm">
-
           <Search className="h-4 w-4 shrink-0 text-white/30" />
 
           <input
@@ -759,7 +739,6 @@ function HomeScreen({
           <span className="shrink-0 rounded-md bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold text-white/40">
             HTTPS
           </span>
-
         </div>
 
         {error && (
@@ -769,7 +748,6 @@ function HomeScreen({
         )}
 
         <div className="mt-3 flex items-center gap-3 text-[10px] text-white/35">
-
           <span className="inline-flex items-center gap-1">
             <ShieldCheck className="h-3 w-3 text-neon" />
             Secure scan
@@ -782,21 +760,16 @@ function HomeScreen({
           <span className="h-1 w-1 rounded-full bg-white/20" />
 
           <span>AI report</span>
-
         </div>
-
       </div>
 
       <div className="px-6 pt-6">
-
         <button
           type="button"
           onClick={onStart}
           className="group relative w-full overflow-hidden rounded-2xl bg-neon py-4 text-ink-950 shadow-neon animate-pulseGlow"
         >
-
           <span className="relative z-10 flex items-center justify-center gap-2 font-display text-[15px] font-700 tracking-tight">
-
             Audit My Store
 
             <span className="rounded-md bg-ink-950/15 px-1.5 py-0.5 text-[12px] font-700">
@@ -807,94 +780,49 @@ function HomeScreen({
               className="h-4 w-4 transition-transform group-hover:translate-x-1"
               strokeWidth={2.5}
             />
-
           </span>
 
           <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-
         </button>
 
         <p className="mt-2.5 text-center text-[10px] text-white/30">
           AI-powered website UX analysis
         </p>
-
       </div>
 
-      {/* ---------------------------------------------------------- */}
-      {/* Full audit history                                         */}
-      {/* ---------------------------------------------------------- */}
-
       <div className="mt-auto px-6 pb-8 pt-8">
-
-        <div className="mb-3 flex items-center justify-between">
-
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/40">
-            Audit History
-          </p>
-
-          {recentAudits.length > 0 && (
-            <span className="text-[10px] text-white/25">
-              {recentAudits.length}{' '}
-              {recentAudits.length === 1
-                ? 'audit'
-                : 'audits'}
-            </span>
-          )}
-
-        </div>
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-white/40">
+          Recent audits
+        </p>
 
         <div className="space-y-2">
-
           {recentAudits.length === 0 ? (
-
             <div className="rounded-xl border border-white/5 bg-white/[0.03] px-3 py-4 text-center">
-
               <p className="text-[11px] text-white/30">
                 No audits yet
               </p>
-
             </div>
-
           ) : (
-
             recentAudits.map((audit) => (
-
               <div
                 key={audit.id}
-                className="rounded-xl border border-white/5 bg-white/[0.03] px-3 py-3"
+                className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2.5"
               >
+                <span className="max-w-[220px] truncate text-[12px] font-medium text-white/70">
+                  {audit.url.replace(
+                    /^https?:\/\//i,
+                    '',
+                  )}
+                </span>
 
-                <div className="flex items-center justify-between gap-3">
-
-                  <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-white/70">
-                    {audit.url.replace(
-                      /^https?:\/\//i,
-                      '',
-                    )}
-                  </span>
-
-                  <span className="shrink-0 rounded-md bg-neon/10 px-2 py-0.5 text-[11px] font-700 text-neon">
-                    {audit.score}/100
-                  </span>
-
-                </div>
-
-                <p className="mt-1 text-[9px] text-white/25">
-                  {new Date(
-                    audit.created_at,
-                  ).toLocaleString()}
-                </p>
-
+                <span className="rounded-md bg-neon/10 px-2 py-0.5 text-[11px] font-700 text-neon">
+                  {audit.score}/100
+                </span>
               </div>
-
             ))
-
           )}
-
         </div>
-
       </div>
-
     </div>
   );
 }
@@ -931,18 +859,14 @@ function LoadingScreen({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-ink-950 bg-radial-fade">
-
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-6">
-
         <div className="relative mb-10 grid place-items-center">
-
           <div className="absolute h-40 w-40 rounded-full bg-neon/10 blur-2xl animate-pulseGlow" />
 
           <svg
             className="h-36 w-36 -rotate-90"
             viewBox="0 0 120 120"
           >
-
             <circle
               cx="60"
               cy="60"
@@ -972,11 +896,9 @@ function LoadingScreen({
                   'drop-shadow(0 0 6px rgba(57,255,20,0.6))',
               }}
             />
-
           </svg>
 
           <div className="absolute flex flex-col items-center">
-
             <span className="font-display text-3xl font-700 text-white">
               {Math.round(progress)}%
             </span>
@@ -984,9 +906,7 @@ function LoadingScreen({
             <span className="text-[10px] uppercase tracking-wider text-white/40">
               analyzing
             </span>
-
           </div>
-
         </div>
 
         <div className="mb-3 max-w-full truncate rounded-full border border-white/10 bg-ink-800 px-4 py-2 text-[11px] text-white/60">
@@ -994,42 +914,32 @@ function LoadingScreen({
         </div>
 
         <div className="mb-6 flex items-center gap-2 rounded-full border border-white/10 bg-ink-800 px-4 py-2">
-
           <span className="relative flex h-2 w-2">
-
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon opacity-60" />
-
             <span className="relative inline-flex h-2 w-2 rounded-full bg-neon" />
-
           </span>
 
           <span className="font-display text-[13px] font-600 text-white/90">
             Gemini is analyzing your store…
           </span>
-
         </div>
 
         <div className="w-full">
-
           <div className="relative h-2 w-full overflow-hidden rounded-full bg-white/5">
-
             <div
               className="relative h-full rounded-full bg-gradient-to-r from-neon-600 to-neon transition-all duration-300"
               style={{
                 width: `${progress}%`,
               }}
             />
-
           </div>
 
           <div className="mt-5 space-y-2.5">
-
             {steps.map((s) => (
               <div
                 key={s.label}
                 className="flex items-center gap-2.5 text-[12px]"
               >
-
                 <span
                   className={`grid h-4 w-4 place-items-center rounded-full transition ${
                     s.done
@@ -1052,20 +962,15 @@ function LoadingScreen({
                 >
                   {s.label}
                 </span>
-
               </div>
             ))}
-
           </div>
-
         </div>
-
       </div>
 
       <p className="px-6 pb-8 text-center text-[10px] text-white/25">
         SiteScope AI is securely processing your website with AI.
       </p>
-
     </div>
   );
 }
@@ -1104,12 +1009,10 @@ function ScoreDial({
 
   return (
     <div className="relative grid place-items-center">
-
       <svg
         className="h-32 w-32 -rotate-90"
         viewBox="0 0 120 120"
       >
-
         <circle
           cx="60"
           cy="60"
@@ -1139,7 +1042,6 @@ function ScoreDial({
         />
 
         <defs>
-
           <linearGradient
             id="scoreGrad"
             x1="0"
@@ -1147,7 +1049,6 @@ function ScoreDial({
             x2="1"
             y2="1"
           >
-
             <stop
               offset="0%"
               stopColor="#1fcc0a"
@@ -1157,15 +1058,11 @@ function ScoreDial({
               offset="100%"
               stopColor="#39ff14"
             />
-
           </linearGradient>
-
         </defs>
-
       </svg>
 
       <div className="absolute flex flex-col items-center">
-
         <span className="font-display text-3xl font-700 leading-none text-white">
           {shown}
         </span>
@@ -1173,9 +1070,7 @@ function ScoreDial({
         <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
           / 100
         </span>
-
       </div>
-
     </div>
   );
 }
@@ -1202,9 +1097,7 @@ function ErrorCard({
 
   return (
     <div className="rounded-xl border border-danger-500/20 bg-danger-500/[0.06] p-3">
-
       <div className="flex items-start gap-2.5">
-
         <span
           className={`mt-0.5 rounded-md px-1.5 py-0.5 text-[9px] font-700 uppercase tracking-wider ${
             isCritical
@@ -1216,7 +1109,6 @@ function ErrorCard({
         </span>
 
         <div className="min-w-0">
-
           <p className="text-[12px] font-600 text-white">
             {title}
           </p>
@@ -1224,11 +1116,8 @@ function ErrorCard({
           <p className="mt-0.5 text-[11px] leading-snug text-white/45">
             {detail}
           </p>
-
         </div>
-
       </div>
-
     </div>
   );
 }
@@ -1284,9 +1173,7 @@ function ResultScreen({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-ink-950 bg-radial-fade">
-
       <div className="flex items-center justify-between px-5 pt-4">
-
         <button
           type="button"
           onClick={onBack}
@@ -1303,15 +1190,12 @@ function ResultScreen({
         <div className="grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/5 text-white/60">
           <Sparkles className="h-3.5 w-3.5" />
         </div>
-
       </div>
 
       <div className="flex flex-col items-center px-5 pt-4">
-
         <ScoreDial score={result.score} />
 
         <div className="mt-3 flex items-center gap-2">
-
           <span className="rounded-full bg-neon/10 px-2.5 py-1 text-[11px] font-700 text-neon">
             {result.score >= 80
               ? 'Good, fixable'
@@ -1323,24 +1207,20 @@ function ResultScreen({
           <span className="max-w-[180px] truncate text-[11px] text-white/40">
             {url}
           </span>
-
         </div>
 
         <p className="mt-2 max-w-[330px] text-center text-[11px] leading-relaxed text-white/40">
           {result.summary}
         </p>
-
       </div>
 
       <div className="px-5 pt-5">
-
         <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/40">
           <AlertTriangle className="h-3 w-3 text-danger-400" />
           Issues found · {result.issues.length}
         </p>
 
         <div className="space-y-2">
-
           {result.issues.map(
             (issue, index) => (
               <ErrorCard
@@ -1352,20 +1232,16 @@ function ResultScreen({
               />
             ),
           )}
-
         </div>
-
       </div>
 
       <div className="px-5 pt-5">
-
         <p className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/40">
           <Zap className="h-3 w-3 text-neon" />
           AI recommendations
         </p>
 
         <div className="space-y-2">
-
           {result.recommendations.map(
             (
               recommendation,
@@ -1387,11 +1263,8 @@ function ResultScreen({
                   key={`${recommendation.text}-${index}`}
                   className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.03] p-3"
                 >
-
                   <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-neon/10 text-neon">
-
                     <Icon className="h-4 w-4" />
-
                   </span>
 
                   <p className="flex-1 text-[12px] font-medium text-white/80">
@@ -1403,25 +1276,20 @@ function ResultScreen({
                       {recommendation.lift}
                     </span>
                   )}
-
                 </div>
               );
             },
           )}
-
         </div>
-
       </div>
 
       <div className="px-5 pb-8 pt-5">
-
         <button
           type="button"
           onClick={handleDownloadPdf}
           disabled={pdfLoading}
           className="flex w-full items-center justify-center gap-2 rounded-2xl border border-neon/30 bg-neon/5 py-3.5 font-display text-[13px] font-700 text-neon transition active:scale-[0.98] disabled:opacity-60"
         >
-
           {pdfLoading ? (
             <>
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-neon/30 border-t-neon" />
@@ -1433,7 +1301,6 @@ function ResultScreen({
               Download PDF Report
             </>
           )}
-
         </button>
 
         {pdfError && (
@@ -1445,9 +1312,7 @@ function ResultScreen({
         <p className="mt-2 text-center text-[10px] text-white/25">
           Your report is generated securely on your device.
         </p>
-
       </div>
-
     </div>
   );
 }
@@ -1457,7 +1322,6 @@ function ResultScreen({
 /* ------------------------------------------------------------------ */
 
 export default function App() {
-
   const [session, setSession] =
     useState<any>(null);
 
@@ -1488,11 +1352,9 @@ export default function App() {
   /* -------------------------------------------------------------- */
 
   useEffect(() => {
-
     let mounted = true;
 
     const loadSession = async () => {
-
       const {
         data,
         error,
@@ -1509,7 +1371,6 @@ export default function App() {
         setSession(data.session);
         setAuthLoading(false);
       }
-
     };
 
     loadSession();
@@ -1520,11 +1381,9 @@ export default function App() {
       },
     } = supabase.auth.onAuthStateChange(
       (_event, nextSession) => {
-
         if (mounted) {
           setSession(nextSession);
         }
-
       },
     );
 
@@ -1532,40 +1391,33 @@ export default function App() {
       mounted = false;
       subscription.unsubscribe();
     };
-
   }, []);
 
   /* -------------------------------------------------------------- */
-  /* Audit history                                                   */
+  /* Recent audits                                                   */
   /* -------------------------------------------------------------- */
 
   const loadRecentAudits = async () => {
-
-    if (!session?.user?.id) {
-      setRecentAudits([]);
-      return;
-    }
-
     try {
-
       const {
         data,
         error,
       } = await supabase
         .from('audits')
         .select(
-          'id,url,score,created_at,user_id',
+          'id,url,score,created_at',
         )
         .eq(
           'user_id',
-          session.user.id,
+          session?.user?.id,
         )
         .order(
           'created_at',
           {
             ascending: false,
           },
-        );
+        )
+        .limit(5);
 
       if (error) {
         throw error;
@@ -1576,36 +1428,27 @@ export default function App() {
           ? data
           : [],
       );
-
     } catch (error) {
-
       console.error(
-        'Could not load audit history:',
+        'Could not load recent audits:',
         error,
       );
-
-      setRecentAudits([]);
-
     }
-
   };
 
   useEffect(() => {
-
     if (session?.user?.id) {
       loadRecentAudits();
     } else {
       setRecentAudits([]);
     }
-
-  }, [session?.user?.id]);
+  }, [session]);
 
   /* -------------------------------------------------------------- */
   /* Audit                                                           */
   /* -------------------------------------------------------------- */
 
   const startAudit = async () => {
-
     const cleanUrl =
       url.trim();
 
@@ -1622,9 +1465,7 @@ export default function App() {
 
     const progressTimer =
       window.setInterval(() => {
-
         setProgress((current) => {
-
           if (current >= 88) {
             return current;
           }
@@ -1634,13 +1475,10 @@ export default function App() {
             current +
               Math.random() * 8,
           );
-
         });
-
       }, 700);
 
     try {
-
       let websiteUrl =
         cleanUrl;
 
@@ -1727,7 +1565,7 @@ export default function App() {
         );
 
       /* ---------------------------------------------------------- */
-      /* Save audit with current user                                */
+      /* Save audit for the logged-in user                          */
       /* ---------------------------------------------------------- */
 
       const {
@@ -1737,23 +1575,17 @@ export default function App() {
         .insert({
           user_id:
             currentSession.user.id,
-
           url: websiteUrl,
-
           score: finalScore,
         });
 
       if (saveError) {
-
         console.error(
           'Could not save audit:',
           saveError,
         );
-
       } else {
-
         await loadRecentAudits();
-
       }
 
       clearInterval(
@@ -1763,7 +1595,6 @@ export default function App() {
       setProgress(100);
 
       setTimeout(() => {
-
         setResult({
           score: finalScore,
 
@@ -1779,11 +1610,8 @@ export default function App() {
         });
 
         setScreen('result');
-
       }, 500);
-
     } catch (err) {
-
       clearInterval(
         progressTimer,
       );
@@ -1796,9 +1624,7 @@ export default function App() {
       setError(message);
       setScreen('home');
       setProgress(0);
-
     }
-
   };
 
   /* -------------------------------------------------------------- */
@@ -1806,7 +1632,6 @@ export default function App() {
   /* -------------------------------------------------------------- */
 
   const handleLogout = async () => {
-
     await supabase.auth.signOut();
 
     setSession(null);
@@ -1814,8 +1639,6 @@ export default function App() {
     setResult(null);
     setError('');
     setProgress(0);
-    setRecentAudits([]);
-
   };
 
   /* -------------------------------------------------------------- */
@@ -1823,30 +1646,22 @@ export default function App() {
   /* -------------------------------------------------------------- */
 
   if (authLoading) {
-
     return (
       <div className="fixed inset-0 grid place-items-center bg-ink-950">
-
         <div className="flex flex-col items-center gap-3">
-
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-neon text-ink-950 shadow-neon">
-
             <Zap
               className="h-6 w-6"
               strokeWidth={2.5}
             />
-
           </div>
 
           <span className="text-[11px] text-white/40">
             Loading SiteScope AI...
           </span>
-
         </div>
-
       </div>
     );
-
   }
 
   /* -------------------------------------------------------------- */
@@ -1854,34 +1669,26 @@ export default function App() {
   /* -------------------------------------------------------------- */
 
   if (!session) {
-
     return (
       <div className="fixed inset-0 overflow-hidden bg-ink-950">
-
         <div className="pointer-events-none absolute -top-40 left-1/4 h-96 w-96 rounded-full bg-neon/10 blur-[120px]" />
 
         <div className="pointer-events-none absolute bottom-0 right-1/4 h-96 w-96 rounded-full bg-neon/5 blur-[120px]" />
 
         <main className="relative z-10 h-full w-full">
-
           <AuthScreen />
-
         </main>
-
       </div>
     );
-
   }
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-ink-950">
-
       <div className="pointer-events-none absolute -top-40 left-1/4 h-96 w-96 rounded-full bg-neon/10 blur-[120px]" />
 
       <div className="pointer-events-none absolute bottom-0 right-1/4 h-96 w-96 rounded-full bg-neon/5 blur-[120px]" />
 
       <main className="relative z-10 h-full w-full">
-
         {screen === 'home' && (
           <HomeScreen
             url={url}
@@ -1919,9 +1726,7 @@ export default function App() {
               }}
             />
           )}
-
       </main>
-
     </div>
   );
 }
