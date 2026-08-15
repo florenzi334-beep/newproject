@@ -15,7 +15,6 @@ import {
   CheckCircle2,
   ArrowRight,
   FileDown,
-  LogOut,
 } from 'lucide-react';
 
 import { supabase } from './lib/supabaseClient';
@@ -45,6 +44,7 @@ type RecentAudit = {
   url: string;
   score: number;
   created_at: string;
+  user_id: string;
 };
 
 /* ------------------------------------------------------------------ */
@@ -498,7 +498,6 @@ function AuthScreen() {
 
   return (
     <div className="flex h-full min-h-0 flex-col justify-center overflow-y-auto bg-ink-950 bg-radial-fade px-6">
-
       <div className="mx-auto w-full max-w-md">
 
         <div className="mb-8 flex flex-col items-center">
@@ -519,6 +518,7 @@ function AuthScreen() {
               ? 'Log in to continue your website audits.'
               : 'Create your account and start auditing.'}
           </p>
+
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
@@ -820,43 +820,81 @@ function HomeScreen({
 
       </div>
 
+      {/* ---------------------------------------------------------- */}
+      {/* Full audit history                                         */}
+      {/* ---------------------------------------------------------- */}
+
       <div className="mt-auto px-6 pb-8 pt-8">
 
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-white/40">
-          Recent audits
-        </p>
+        <div className="mb-3 flex items-center justify-between">
+
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/40">
+            Audit History
+          </p>
+
+          {recentAudits.length > 0 && (
+            <span className="text-[10px] text-white/25">
+              {recentAudits.length}{' '}
+              {recentAudits.length === 1
+                ? 'audit'
+                : 'audits'}
+            </span>
+          )}
+
+        </div>
 
         <div className="space-y-2">
 
           {recentAudits.length === 0 ? (
+
             <div className="rounded-xl border border-white/5 bg-white/[0.03] px-3 py-4 text-center">
+
               <p className="text-[11px] text-white/30">
                 No audits yet
               </p>
+
             </div>
+
           ) : (
+
             recentAudits.map((audit) => (
+
               <div
                 key={audit.id}
-                className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2.5"
+                className="rounded-xl border border-white/5 bg-white/[0.03] px-3 py-3"
               >
-                <span className="max-w-[220px] truncate text-[12px] font-medium text-white/70">
-                  {audit.url.replace(
-                    /^https?:\/\//i,
-                    '',
-                  )}
-                </span>
 
-                <span className="rounded-md bg-neon/10 px-2 py-0.5 text-[11px] font-700 text-neon">
-                  {audit.score}/100
-                </span>
+                <div className="flex items-center justify-between gap-3">
+
+                  <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-white/70">
+                    {audit.url.replace(
+                      /^https?:\/\//i,
+                      '',
+                    )}
+                  </span>
+
+                  <span className="shrink-0 rounded-md bg-neon/10 px-2 py-0.5 text-[11px] font-700 text-neon">
+                    {audit.score}/100
+                  </span>
+
+                </div>
+
+                <p className="mt-1 text-[9px] text-white/25">
+                  {new Date(
+                    audit.created_at,
+                  ).toLocaleString()}
+                </p>
+
               </div>
+
             ))
+
           )}
 
         </div>
 
       </div>
+
     </div>
   );
 }
@@ -1498,10 +1536,15 @@ export default function App() {
   }, []);
 
   /* -------------------------------------------------------------- */
-  /* Recent audits                                                   */
+  /* Audit history                                                   */
   /* -------------------------------------------------------------- */
 
   const loadRecentAudits = async () => {
+
+    if (!session?.user?.id) {
+      setRecentAudits([]);
+      return;
+    }
 
     try {
 
@@ -1511,15 +1554,18 @@ export default function App() {
       } = await supabase
         .from('audits')
         .select(
-          'id,url,score,created_at',
+          'id,url,score,created_at,user_id',
+        )
+        .eq(
+          'user_id',
+          session.user.id,
         )
         .order(
           'created_at',
           {
             ascending: false,
           },
-        )
-        .limit(5);
+        );
 
       if (error) {
         throw error;
@@ -1534,9 +1580,11 @@ export default function App() {
     } catch (error) {
 
       console.error(
-        'Could not load recent audits:',
+        'Could not load audit history:',
         error,
       );
+
+      setRecentAudits([]);
 
     }
 
@@ -1544,13 +1592,13 @@ export default function App() {
 
   useEffect(() => {
 
-    if (session) {
+    if (session?.user?.id) {
       loadRecentAudits();
     } else {
       setRecentAudits([]);
     }
 
-  }, [session]);
+  }, [session?.user?.id]);
 
   /* -------------------------------------------------------------- */
   /* Audit                                                           */
@@ -1678,32 +1726,34 @@ export default function App() {
           ),
         );
 
-      /*
-       * Save the audit through
-       * the authenticated Supabase
-       * client.
-       *
-       * NOTE:
-       * This assumes the current
-       * audits table still allows
-       * authenticated users to insert.
-       */
+      /* ---------------------------------------------------------- */
+      /* Save audit with current user                                */
+      /* ---------------------------------------------------------- */
+
       const {
         error: saveError,
       } = await supabase
         .from('audits')
         .insert({
+          user_id:
+            currentSession.user.id,
+
           url: websiteUrl,
+
           score: finalScore,
         });
 
       if (saveError) {
+
         console.error(
           'Could not save audit:',
           saveError,
         );
+
       } else {
+
         await loadRecentAudits();
+
       }
 
       clearInterval(
@@ -1764,6 +1814,7 @@ export default function App() {
     setResult(null);
     setError('');
     setProgress(0);
+    setRecentAudits([]);
 
   };
 
@@ -1779,10 +1830,12 @@ export default function App() {
         <div className="flex flex-col items-center gap-3">
 
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-neon text-ink-950 shadow-neon">
+
             <Zap
               className="h-6 w-6"
               strokeWidth={2.5}
             />
+
           </div>
 
           <span className="text-[11px] text-white/40">
@@ -1871,5 +1924,4 @@ export default function App() {
 
     </div>
   );
-
 }
